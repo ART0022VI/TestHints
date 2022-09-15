@@ -13,54 +13,61 @@ namespace Hints
     public class Pluginn : Plugin
     {
         public override string Developer => "ГIеJIbмeнь#3519";
-        public override string Name => "Hello";
-        public override Version Version => new Version(7, 7, 7);
+        public override string Name => "Hints";
+        public override Version Version => new Version(1, 0, 0);
         public TimeSpan TTime { get; set; }
+        public static int pls = 0;
+        public static int scp = 0;
         public override void Disable()
         {
             Qurre.Events.Round.Start += Stats;
+            Qurre.Events.Player.Join += OnJoin;
+            Qurre.Events.Player.Leave += OnLeave;
         }
 
         public override void Enable()
         {
             Qurre.Events.Round.Start += Stats;
-        }
+            Qurre.Events.Player.Join -= OnJoin;
+            Qurre.Events.Player.Leave -= OnLeave;
+        }   
         public void Stats()
         {
             Timing.RunCoroutine(Cycle(), "time");
+            foreach (Player plll in Player.List)
+            {
+                pls++;
+                if (ScpList.Contains(plll.Role))
+                {
+                    scp++;
+                }
+            }
         }
         public IEnumerator<float> Cycle()
         {
-            Log.Info("перезапуск");
+            TTime = new TimeSpan(0, 0, 0);
             int roundtime = 0;
-            int pls = 0;
-            int scp = 0;
-            roundtime++;
-            Log.Info($"игроков - {pls}, время раунда - {roundtime}, SCP - {scp}");
-            foreach (Player pl in Player.List)
+            while (!Round.Ended)
             {
-                if (pl.Role == RoleType.Spectator)
+                foreach (Player pl in Player.List)
                 {
-                    foreach (Player plll in Player.List)
+                    if (pl.Role == RoleType.Spectator)
                     {
-                        pls++;
-                        if (ScpList.Contains(plll.Role))
+                        foreach (Player pll in Player.List)
                         {
-                            scp++;
+                            pll.ShowHint($"<align=right><color=green> Онлайн - {pls}</color></align>" +
+                                        $"\n <align=right><color=red> Сейчас {scp} СЦП </color></align>" +
+                                        $"\n <align=right><color=yellow> Время ранунда - {TTime} </color></align>", 1);
                         }
                     }
-                    foreach (Player pll in Player.List)
-                    {
-                        pll.ShowHint($"                                     <color=green> Сейчас {pls} игроков на сервер! </color>" +
-                                    $"                                     \n <color=red> Сейчас {scp} сцп! </color>" +
-                                    $"                                     \n <color=yello> Время ранунда - {Round.ElapsedTime} </color>", 10);
-                    }
                 }
+                TTime += TimeSpan.FromSeconds(1f);
+                yield return Timing.WaitForSeconds(1f);
             }
             yield return Timing.WaitForSeconds(1f);
         }
         public List<RoleType> ScpList = new List<RoleType>()
-        {
+        { 
             RoleType.Scp173,
             RoleType.Scp106,
             RoleType.Scp049,
@@ -69,5 +76,7 @@ namespace Hints
             RoleType.Scp93989,
             RoleType.Scp079
         };
+        public void OnJoin(JoinEvent ev) => pls++;
+        public void OnLeave(LeaveEvent ev) => pls--;
     }
 }
