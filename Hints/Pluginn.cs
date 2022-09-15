@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MEC;
 using Qurre;
 using Qurre.API;
-
+using Qurre.API.Events;
 
 namespace Hints
 {
@@ -14,31 +15,49 @@ namespace Hints
         public override string Developer => "ГIеJIbмeнь#3519";
         public override string Name => "Hello";
         public override Version Version => new Version(7, 7, 7);
+        public TimeSpan TTime { get; set; }
         public override void Disable()
         {
-            Qurre.Events.Round.Start -= Stats;
+            Qurre.Events.Round.Start += Stats;
         }
 
         public override void Enable()
         {
             Qurre.Events.Round.Start += Stats;
-        }   
+        }
         public void Stats()
         {
+            Timing.RunCoroutine(Cycle(), "time");
+        }
+        public IEnumerator<float> Cycle()
+        {
+            Log.Info("перезапуск");
+            int roundtime = 0;
             int pls = 0;
             int scp = 0;
+            roundtime++;
+            Log.Info($"игроков - {pls}, время раунда - {roundtime}, SCP - {scp}");
             foreach (Player pl in Player.List)
             {
-                pls++;
-                if (ScpList.Contains(pl.Role))
+                if (pl.Role == RoleType.Spectator)
                 {
-                    scp++;
+                    foreach (Player plll in Player.List)
+                    {
+                        pls++;
+                        if (ScpList.Contains(plll.Role))
+                        {
+                            scp++;
+                        }
+                    }
+                    foreach (Player pll in Player.List)
+                    {
+                        pll.ShowHint($"                                     <color=green> Сейчас {pls} игроков на сервер! </color>" +
+                                    $"                                     \n <color=red> Сейчас {scp} сцп! </color>" +
+                                    $"                                     \n <color=yello> Время ранунда - {Round.ElapsedTime} </color>", 10);
+                    }
                 }
             }
-            foreach (Player pl in Player.List)
-            {
-                pl.ShowHint($"Сейчас {pls} игроков на сервер!" + $"\n Сейчас {scp} сцп!", 10);
-            }
+            yield return Timing.WaitForSeconds(1f);
         }
         public List<RoleType> ScpList = new List<RoleType>()
         {
